@@ -1,0 +1,88 @@
+﻿@page "/order/{orderId:guid}"
+@inject NavigationManager NavigationManager
+@inject HttpClient HttpClient
+
+<div class="top-bar">
+    <a class="logo" href="">
+        <img src="img/logo.svg" />
+    </a>
+
+    <NavLink href="" class="nav-tab" Match="NavLinkMatch.All">
+        <img src="img/pizza-slice.svg" />
+        <div>Get Pizza</div>
+    </NavLink>
+
+    <NavLink href="orders" class="nav-tab">
+        <img src="img/bike.svg" />
+        <div>My Orders</div>
+    </NavLink>
+</div>
+
+<div class="main">
+    @if (invalidOrder)
+    {
+        <h2>Order not found</h2>
+        <p>We're sorry but this order no longer exists.</p>
+    }
+    else if (order == null)
+    {
+        <div class="track-order">
+            <div class="track-order-title">
+                <h2>
+                  <text>Loading...</text>
+                </h2>
+                <p class="ml-auto mb-0">
+                    ...
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="track-order">
+            <div class="track-order-title">
+                <h2>
+                    Order placed @order.CreatedDate.ToLongDateString()
+                </h2>
+                <p class="ml-auto mb-0">
+                    Status: <strong>@order.DeliveryStatus</strong>
+                </p>
+            </div>
+            <div class="track-order-body">
+                <div class="track-order-details">
+                  @foreach (var line in order.OrderLines)
+                  {
+                      <p>
+                          <strong>
+                              @(line?.ItemCode)
+                              @line?.ItemDescription
+                              (£@line?.GetFormattedTotalPrice())
+                          </strong>
+                      </p>
+                  }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid OrderId { get; set; }
+
+    Datas.Models.Orders.Order? order;
+    bool invalidOrder = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+      try
+      {
+          order = await HttpClient.GetFromJsonAsync<Datas.Models.Orders.Order>(
+              $"{NavigationManager.BaseUri}orders/{OrderId}");
+      }
+      catch (Exception ex)
+      {
+          invalidOrder = true;
+          Console.Error.WriteLine(ex);
+      }
+    }
+}

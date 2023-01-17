@@ -1,0 +1,69 @@
+﻿@page "/order"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@using YZBlazorServerApp.Datas.Models.Orders;
+
+<div class="top-bar">
+    <a class="logo" href="">
+        <img src="img/logo.svg" />
+    </a>
+
+    <NavLink href="" class="nav-tab" Match="NavLinkMatch.All">
+        <img src="img/pizza-slice.svg" />
+        <div>Get Pizza</div>
+    </NavLink>
+
+    <NavLink href="orders" class="nav-tab">
+        <img src="img/bike.svg" />
+        <div>My Orders</div>
+    </NavLink>
+</div>
+
+<div class="main">
+    @if (orders == null)
+    {
+        <text>Loading...</text>
+    }
+    else if (!orders.Any())
+    {
+        <h2>No orders placed</h2>
+        <a class="btn btn-success" href="">Order some pizza</a>
+    }
+    else
+    {
+        <div class="list-group orders-list">
+            @foreach (var order in orders)
+            {
+                <div class="list-group-item">
+                    <div class="col">
+                        <h5>@order.CreatedDate.ToLongDateString()</h5>
+                        Items:
+                        <strong>@order.OrderLines.Count()</strong>;
+                        Total price:
+                        <strong>£@order.GetFormattedTotalPrice()</strong>
+                    </div>
+                    <div class="col">
+                        Status: <strong>@order.DeliveryStatus</strong>
+                    </div>
+                    @if (order.DeliveryStatus == null)
+                    {
+                        <div class="col flex-grow-0">
+                            <a href="order/@order.Id" class="btn btn-success">
+                                Track &gt;
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    List<Datas.Models.Orders.Order> orders = new List<Datas.Models.Orders.Order>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        orders = await HttpClient.GetFromJsonAsync<List<Datas.Models.Orders.Order>>($"{NavigationManager.BaseUri}orders");
+    }
+}

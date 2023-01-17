@@ -1,0 +1,53 @@
+﻿@using YZBlazorServerApp.Datas.Models.Items
+@using YZBlazorServerApp.Datas.Models.Items.Configurations
+@inject HttpClient HttpClient
+
+<div class="dialog-container">
+    <div class="dialog">
+        <div class="dialog-title">
+            <h2>@Item.ItemCode</h2>
+            @Item.ItemDescription
+        </div>
+        <form class="dialog-body">
+            <div>
+                @if (Item.ConfigSizeGroups.Any())
+                {
+                    @foreach (var rec in Item.ConfigSizeGroups)
+                    {
+                        <label>@rec.ConfigGroupDescription:</label>
+                        <input type="range" min="@rec.GetMinSize()" max="@rec.GetMaxSize()" step="1" />
+                        <span class="size-label">
+                            make this val dynamic @(rec.ConfigSizeGroupUnit)
+                        </span>
+                    }
+                }
+            </div>
+            @*make this drop downs*@
+            <div>
+                @if (ConfigTypeGroupGonfigTypeDict.Any())
+                {
+                    @foreach (var rec in ConfigTypeGroupGonfigTypeDict)
+                    {
+                        <label>@rec.Key.ConfigGroupDescription - @rec.Value.ConfigDescription:</label>
+                    }
+                }
+            </div>
+        </form>
+
+        <div class="dialog-buttons">
+            <button class="btn btn-secondary mr-auto" @onclick="OnCancel">Cancel</button>
+            <span class="mr-center">
+                Price: <span class="price">@(Item.GetFormattedTotalPrice(1, ConfigSizeGroupConfigSizeDict, ConfigTypeGroupGonfigTypeDict))</span>
+            </span>
+            <button class="btn btn-success ml-auto" @onclick="OnConfirm">Order ></button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Item Item { get; set; } = new Item();
+    [Parameter] public Dictionary<ConfigSizeGroup, ConfigSize> ConfigSizeGroupConfigSizeDict { get; set; } = new Dictionary<ConfigSizeGroup, ConfigSize>();
+    [Parameter] public Dictionary<ConfigTypeGroup, ConfigType> ConfigTypeGroupGonfigTypeDict { get; set; } = new Dictionary<ConfigTypeGroup, ConfigType>();
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+}

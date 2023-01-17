@@ -1,0 +1,99 @@
+﻿@page "/itemlist"
+
+@using YZBlazorServerApp.Datas.Models.Items
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@using YZBlazorServerApp.Pages.Items
+@inject ItemConfigDialogService ItemConfigDialogService
+@using YZBlazorServerApp.Datas.Models.Orders;
+@using YZBlazorServerApp.Datas.Models.Users;
+@using YZBlazorServerApp.Datas.Models.Addresses;
+
+<div class="top-bar">
+    <a class="logo" href="">
+        <img src="img/logo.svg" />
+    </a>
+
+    <NavLink href="" class="nav-tab" Match="NavLinkMatch.All">
+        <img src="img/pizza-slice.svg" />
+        <div>Get Pizza</div>
+    </NavLink>
+
+    <NavLink href="orders" class="nav-tab">
+        <img src="img/bike.svg" />
+        <div>My Orders</div>
+    </NavLink>
+</div>
+
+<h3>Items List</h3>
+
+<ul class="pizza-cards">
+    @if (Items != null)
+    {
+        @foreach (var item in Items)
+        {
+            <li @onclick="@(() => ItemConfigDialogService.DisplayItemConfigurationDialog(item))" style="background-image: url('@item.ItemImageUrl')">
+                <div class="pizza-info">
+                    <span class="title">@item.ItemCode</span>
+                    @item.ItemDescription
+                    <span class="price">@item.GetFormattedUnitPrice(ItemConfigDialogService.ConfigSizeGroupConfigSizeDict, ItemConfigDialogService.ConfigTypeGroupGonfigTypeDict)</span>
+                </div>
+            </li>
+        }
+    }
+</ul>
+
+@if (ItemConfigDialogService.ShowingConfigureDialog)
+{
+    <ItemConfigDialog Item="ItemConfigDialogService.ConfiguringItem"
+                  OnCancel="ItemConfigDialogService.CancelConfigurationDialog"
+                  OnConfirm="ItemConfigDialogService.AddToCartFromConfigDialog"
+                  ConfigSizeGroupConfigSizeDict="ItemConfigDialogService.ConfigSizeGroupConfigSizeDict"
+                  ConfigTypeGroupGonfigTypeDict="ItemConfigDialogService.ConfigTypeGroupGonfigTypeDict" />
+}
+
+<div class="sidebar">
+    <div class="order-total @(order.OrderLines.Any() ? "" : "hidden")">
+        Total:
+        <span class="total-price">@order.GetFormattedTotalPrice()</span>
+        <a href="checkout" class="@(ItemConfigDialogService.Order.OrderLines.Count == 0 ? "btn btn-warning disabled" : "btn btn-warning")">
+            Order >
+        </a>
+    </div>
+
+    @if (order.OrderLines.Any())
+    {
+        <div class="order-contents">
+            <h2>Your order</h2>
+
+            @foreach (var line in order.OrderLines)
+            {
+                <div class="cart-item">
+                    <div class="title">@(line?.ItemCode) - @(line?.ItemDescription)</div>
+                    <div class="item-price">
+                        @line?.GetFormattedTotalPrice()
+                    </div>
+                    <a @onclick="@(() => ItemConfigDialogService.RemoveConfiguredItemFromCart(line))" class="delete-item">x</a>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-cart">Choose an item<br>to get started</div>
+    }
+</div>
+
+@code {
+    List<Item> Items = new List<Item>();
+    Datas.Models.Orders.Order order => ItemConfigDialogService.Order;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Items = await HttpClient.GetFromJsonAsync<List<Item>>(NavigationManager.BaseUri + "items");
+        var x = await HttpClient.GetFromJsonAsync<List<Customer>>(NavigationManager.BaseUri + "customers");
+        ItemConfigDialogService.Order.Customer = x.FirstOrDefault();
+        var y = await HttpClient.GetFromJsonAsync<List<Address>>(NavigationManager.BaseUri + "addresses");
+        ItemConfigDialogService.Order.DeliveryAddress = y.FirstOrDefault();
+    }
+}
